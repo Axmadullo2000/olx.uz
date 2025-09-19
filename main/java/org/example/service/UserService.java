@@ -33,7 +33,7 @@ public class UserService {
                 return false;
             }
         }
-
+        Utils.currentUser = new User(userDTO.id(), userDTO.fullName(), userDTO.phoneNumber(), userDTO.gmail(), userDTO.password(), userDTO.userRole(), userDTO.userStatus()); // Set current user
         String userData = "%s#%s#%s#%s#%s#%s#%s\n".formatted(userDTO.id(), userDTO.fullName(), userDTO.phoneNumber(), userDTO.gmail(), userDTO.password(), UserRole.USER, UserStatus.ACTIVE);
         userRepository.addUserToFile(userData, userDTO);
 

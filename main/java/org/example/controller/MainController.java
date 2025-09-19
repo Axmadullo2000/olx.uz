@@ -65,13 +65,11 @@ public class MainController {
 
             if (LocalDateTime.now().isBefore(localDateTime)) {
                 if (verificationCode == code) {
-                    User user = new User(UUID.randomUUID().toString(), fullName, phoneNumber, gmail, password, UserRole.USER, UserStatus.ACTIVE);
-                    UserRegisterDTO userRegisterDTO = new UserRegisterDTO(user.getId(), user.getFullName(), user.getPhoneNumber(), user.getGmail(), user.getPassword(), UserRole.USER, UserStatus.ACTIVE);
+                    UserRegisterDTO userRegisterDTO = new UserRegisterDTO(UUID.randomUUID().toString(), fullName, phoneNumber, gmail, password, UserRole.USER, UserStatus.ACTIVE);
 
                     boolean response = userService.registerUser(userRegisterDTO);
 
                     if (response) {
-                        Utils.currentUser = user; // Set current user
                         userMenu();
                     } else {
                         System.out.println("You are already registered on this platform! Sign in to use the program!");
