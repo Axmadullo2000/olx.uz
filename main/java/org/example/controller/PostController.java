@@ -12,13 +12,19 @@ import java.util.List;
 import java.util.UUID;
 
 public class PostController {
+    private static PostController postController;
+
     private final PostService postService = PostService.getInstance();
 
     private PostController() {
     }
 
     public static PostController getInstance() {
-        return new PostController();
+        if (postController == null) {
+            postController = new PostController();
+        }
+
+        return postController;
     }
 
     public void addNewPost() {

@@ -8,16 +8,24 @@ import org.example.repository.UserRepository;
 import org.example.utils.Utils;
 
 import java.util.List;
+import java.util.Optional;
 
 public class PostService {
+    private static PostService postService;
+
     PostRepository postRepository = PostRepository.getInstance();
     UserRepository userRepository = UserRepository.getInstance();
+
 
     public PostService() {
     }
 
     public static PostService getInstance() {
-        return new PostService();
+        if (postService == null) {
+            postService = new PostService();
+        }
+
+        return postService;
     }
 
     public boolean createPost(PostDTO postDTO) {
@@ -77,10 +85,16 @@ public class PostService {
 
         for (PostDTO post : list) {
             if (post.id().equals(postId)) {
-                return userRepository.getAllUsers().stream()
-                        .filter(userRegisterDTO -> userRegisterDTO.id().equals(post.currentUserId()))
-                        .map(UserRegisterDTO::fullName)
-                        .toList().get(0);
+                Optional<List<UserRegisterDTO>> data = userRepository.getAllUsers();
+
+                if (data.isPresent()) {
+                    List<UserRegisterDTO> userRegisterDTOS = data.get();
+
+                    return userRegisterDTOS.stream()
+                            .filter(userRegisterDTO -> userRegisterDTO.id().equals(post.currentUserId()))
+                            .map(UserRegisterDTO::fullName)
+                            .toList().get(0);
+                }
             }
         }
 

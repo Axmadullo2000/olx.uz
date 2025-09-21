@@ -17,9 +17,12 @@ import java.nio.file.StandardOpenOption;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Data
 public class UserRepository {
+    private static UserRepository userRepository;
+
     Path userPath = Path.of("src/main/resources/users.txt");
     Path postPath = Path.of("src/main/resources/posts.txt");
 
@@ -28,10 +31,14 @@ public class UserRepository {
     }
 
     public static UserRepository getInstance() {
-        return new UserRepository();
+        if (userRepository == null) {
+            userRepository = new UserRepository();
+        }
+
+        return userRepository;
     }
 
-    public List<UserRegisterDTO> getAllUsers() {
+    public Optional<List<UserRegisterDTO>> getAllUsers() {
         List<UserRegisterDTO> list = new ArrayList<>();
 
         try {
@@ -46,17 +53,24 @@ public class UserRepository {
                     list.add(new UserRegisterDTO(data[0], data[1], data[2], data[3], data[4], UserRole.valueOf(data[5]), UserStatus.valueOf(data[6])));
                 }
 
-                return list;
+                return Optional.of(list);
             }
 
         } catch (IOException e) {
             e.printStackTrace();
         }
 
-        return null;
+        return Optional.empty();
     }
 
     public void addUserToFile(String userData, UserRegisterDTO userDTO) {
+        if (!Files.exists(userPath)) {
+            try {
+                Files.createFile(userPath);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
         try {
             Files.writeString(userPath, userData, StandardOpenOption.APPEND);
             Utils.currentUser = new User(userDTO.id(), userDTO.fullName(), userDTO.phoneNumber(), userDTO.gmail(), userDTO.password(), userDTO.userRole(), userDTO.userStatus());
@@ -67,45 +81,51 @@ public class UserRepository {
     }
 
     public void changeUserStatusById(String id) {
-        List<UserRegisterDTO> allUsers = getAllUsers();
+        Optional<List<UserRegisterDTO>> allUsers = getAllUsers();
 
-        for (int i = 0; i < allUsers.size(); i++) {
-            UserRegisterDTO allUser = allUsers.get(i);
-            if (allUser.id().equals(id)) {
+        if (allUsers.isPresent()) {
+            List<UserRegisterDTO> userData = allUsers.get();
 
-                UserRegisterDTO updateUser = new UserRegisterDTO(
-                        allUser.id(),
-                        allUser.fullName(),
-                        allUser.phoneNumber(),
-                        allUser.gmail(),
-                        allUser.password(),
-                        allUser.userRole(),
-                        UserStatus.BLOCK
-                );
+            for (int i = 0; i < userData.size(); i++) {
+                UserRegisterDTO allUser = userData.get(i);
+                if (allUser.id().equals(id)) {
 
-                allUsers.set(i, updateUser);
+                    UserRegisterDTO updateUser = new UserRegisterDTO(
+                            allUser.id(),
+                            allUser.fullName(),
+                            allUser.phoneNumber(),
+                            allUser.gmail(),
+                            allUser.password(),
+                            allUser.userRole(),
+                            UserStatus.BLOCK
+                    );
+
+                    userData.set(i, updateUser);
+                }
             }
         }
 
         try (BufferedWriter writer = Files.newBufferedWriter(userPath, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING)) {
-            for (UserRegisterDTO user : allUsers) {
-                String userData = "%s#%s#%s#%s#%s#%s#%s\n".formatted(
-                        user.id(),
-                        user.fullName(),
-                        user.phoneNumber(),
-                        user.gmail(),
-                        user.password(),
-                        user.userRole(),
-                        user.userStatus()
-                );
+            if (allUsers.isPresent()) {
+                List<UserRegisterDTO> userData = allUsers.get();
 
-                writer.write(userData);
+                for (UserRegisterDTO user : userData) {
+                    String data = "%s#%s#%s#%s#%s#%s#%s\n".formatted(
+                            user.id(),
+                            user.fullName(),
+                            user.phoneNumber(),
+                            user.gmail(),
+                            user.password(),
+                            user.userRole(),
+                            user.userStatus()
+                    );
+
+                    writer.write(data);
+                }
             }
         }catch (IOException e) {
             e.printStackTrace();
         }
     }
-
-
 }
 

@@ -18,6 +18,8 @@ import java.util.Random;
 import java.util.UUID;
 
 public class MainController {
+    private static MainController mainController;
+
     private final UserService userService = UserService.getInstance();
     private final PostController postController = PostController.getInstance();
 
@@ -25,7 +27,11 @@ public class MainController {
     }
 
     public static MainController getInstance() {
-        return new MainController();
+        if (mainController == null) {
+            mainController = new MainController();
+        }
+
+        return mainController;
     }
 
     public void start() {

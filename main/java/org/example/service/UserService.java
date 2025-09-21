@@ -13,6 +13,8 @@ import java.util.List;
 import java.util.Optional;
 
 public class UserService {
+    private static UserService userService;
+
     UserRepository userRepository = UserRepository.getInstance();
 
     private UserService() {
@@ -20,19 +22,28 @@ public class UserService {
     }
 
     public static UserService getInstance() {
-        return new UserService();
+        if (userService == null) {
+            userService = new UserService();
+        }
+
+        return userService;
     }
 
     // User
 
     public boolean registerUser(UserRegisterDTO userDTO) {
-        List<UserRegisterDTO> userList = userRepository.getAllUsers();
+        Optional<List<UserRegisterDTO>> userList = userRepository.getAllUsers();
 
-        for (UserRegisterDTO data : userList) {
-            if (data.phoneNumber().equals(userDTO.phoneNumber()) && data.gmail().equals(userDTO.gmail())) {
-                return false;
+        if (userList.isPresent()) {
+            List<UserRegisterDTO> userRegisterDTOS = userList.get();
+
+            for (UserRegisterDTO data : userRegisterDTOS) {
+                if (data.phoneNumber().equals(userDTO.phoneNumber()) && data.gmail().equals(userDTO.gmail())) {
+                    return false;
+                }
             }
         }
+
         Utils.currentUser = new User(userDTO.id(), userDTO.fullName(), userDTO.phoneNumber(), userDTO.gmail(), userDTO.password(), userDTO.userRole(), userDTO.userStatus()); // Set current user
         String userData = "%s#%s#%s#%s#%s#%s#%s\n".formatted(userDTO.id(), userDTO.fullName(), userDTO.phoneNumber(), userDTO.gmail(), userDTO.password(), UserRole.USER, UserStatus.ACTIVE);
         userRepository.addUserToFile(userData, userDTO);
@@ -41,21 +52,28 @@ public class UserService {
     }
 
     public Optional<User> loginUser(UserLoginDTO userLoginDTO) {
-        List<UserRegisterDTO> usersList = userRepository.getAllUsers();
+        Optional<List<UserRegisterDTO>> usersList = userRepository.getAllUsers();
 
-        Optional<User> registeredUser = usersList.stream()
-                .filter(userRegisterDTO -> userRegisterDTO.gmail().equals(userLoginDTO.gmail()))
-                .filter(userRegisterDTO -> userRegisterDTO.phoneNumber().equals(userLoginDTO.phoneNumber()))
-                .filter(userRegisterDTO -> userRegisterDTO.password().equals(userLoginDTO.password()))
-                .map(userRegisterDTO -> new User(
-                        userRegisterDTO.id(), userRegisterDTO.fullName(),
-                        userRegisterDTO.phoneNumber(), userRegisterDTO.gmail(),
-                        userRegisterDTO.password(), userRegisterDTO.userRole(),
-                        userRegisterDTO.userStatus()))
-                .findFirst();
+        Optional<User> registeredUser = Optional.empty();
 
-        registeredUser.ifPresent(user -> Utils.currentUser = new User(user.getId(), user.getFullName(), user.getPhoneNumber(),
-                user.getGmail(), user.getPassword(), user.getUserRole(), user.getUserStatus()));
+        if (usersList.isPresent()) {
+            List<UserRegisterDTO> userRegisterDTOS = usersList.get();
+
+            registeredUser = userRegisterDTOS.stream().filter(userRegisterDTO -> userRegisterDTO.gmail().equals(userLoginDTO.gmail()))
+                    .filter(userRegisterDTO -> userRegisterDTO.phoneNumber().equals(userLoginDTO.phoneNumber()))
+                    .filter(userRegisterDTO -> userRegisterDTO.password().equals(userLoginDTO.password()))
+                    .map(userRegisterDTO -> new User(
+                            userRegisterDTO.id(), userRegisterDTO.fullName(),
+                            userRegisterDTO.phoneNumber(), userRegisterDTO.gmail(),
+                            userRegisterDTO.password(), userRegisterDTO.userRole(),
+                            userRegisterDTO.userStatus()))
+                    .findFirst();
+
+            registeredUser.ifPresent(user -> Utils.currentUser = new User(user.getId(), user.getFullName(), user.getPhoneNumber(),
+                    user.getGmail(), user.getPassword(), user.getUserRole(), user.getUserStatus()));
+
+        }
+
 
         return registeredUser;
     }
@@ -63,13 +81,19 @@ public class UserService {
     public List<UserRegisterDTO> getActiveUsers() {
         List<UserRegisterDTO> activeUsers = new ArrayList<>();
 
-        for (UserRegisterDTO allUser : userRepository.getAllUsers()) {
-            if (allUser.userRole().equals(UserRole.ADMIN)) {
-                continue;
-            }
+        Optional<List<UserRegisterDTO>> allUsers = userRepository.getAllUsers();
 
-            if (allUser.userStatus().equals(UserStatus.ACTIVE)) {
-                activeUsers.add(allUser);
+        if (allUsers.isPresent()) {
+            List<UserRegisterDTO> userRegisterDTOS = allUsers.get();
+
+            for (UserRegisterDTO allUser : userRegisterDTOS) {
+                if (allUser.userRole().equals(UserRole.ADMIN)) {
+                    continue;
+                }
+
+                if (allUser.userStatus().equals(UserStatus.ACTIVE)) {
+                    activeUsers.add(allUser);
+                }
             }
         }
 

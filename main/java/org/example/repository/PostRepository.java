@@ -13,14 +13,19 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class PostRepository {
+    private static PostRepository postRepository;
+
     Path postPath = Path.of("src/main/resources/posts.txt");
 
     private PostRepository() {
-
     }
 
     public static PostRepository getInstance() {
-        return new PostRepository();
+        if (postRepository == null) {
+            postRepository = new PostRepository();
+        }
+
+        return postRepository;
     }
 
     public void createPost(String postData) {
